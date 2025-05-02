@@ -1,0 +1,62 @@
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    # Build and push Docker images
+    - name: Build and push user-service
+      uses: docker/build-push-action@v4
+      with:
+        context: ./user-service
+        push: true
+        tags: ${{ secrets.DOCKER_HUB }}/user-service:latest
+        
+    - name: Build and push product-service
+      uses: docker/build-push-action@v4
+      with:
+        context: ./product-service
+        push: true
+        tags: ${{ secrets.DOCKER_HUB }}/product-service:latest
+        
+    - name: Build and push order-service
+      uses: docker/build-push-action@v4
+      with:
+        context: ./order-service
+        push: true
+        tags: ${{ secrets.DOCKER_HUB }}/order-service:latest
+        
+    - name: Build and push seckill-service
+      uses: docker/build-push-action@v4
+      with:
+        context: ./seckill-service
+        push: true
+        tags: ${{ secrets.DOCKER_HUB }}/seckill-service:latest
+        
+    - name: Build and push private-domain
+      uses: docker/build-push-action@v4
+      with:
+        context: ./private-domain
+        push: true
+        tags: ${{ secrets.DOCKER_HUB }}/private-domain:latest
+    
+    # Deploy to Kubernetes
+    - name: Deploy to cluster
+      uses: azure/k8s-deploy@v3
+      with:
+        namespace: ecommerce
+        manifests: ./infrastructure/k8s/deployment.yaml
+        images: |
+          ${{ secrets.DOCKER_HUB }}/user-service:latest
+          ${{ secrets.DOCKER_HUB }}/product-service:latest
+          ${{ secrets.DOCKER_HUB }}/order-service:latest
+          ${{ secrets.DOCKER_HUB }}/seckill-service:latest
+          ${{ secrets.DOCKER_HUB }}/private-domain:latest

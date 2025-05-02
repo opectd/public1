@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-platform
+  labels:
+    app: ecommerce
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ecommerce
+  template:
+    metadata:
+      labels:
+        app: ecommerce
+    spec:
+      containers:
+      - name: user-service
+        image: ecommerce/user-service:latest
+        ports:
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: ecommerce-config
+      - name: product-service
+        image: ecommerce/product-service:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: ecommerce-config
+      - name: order-service
+        image: ecommerce/order-service:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: ecommerce-config
+      - name: seckill-service
+        image: ecommerce/seckill-service:latest
+        ports:
+        - containerPort: 80
+        envFrom:
+        - configMapRef:
+            name: ecommerce-config
+      - name: private-domain
+        image: ecommerce/private-domain:latest
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - configMapRef:
+            name: ecommerce-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-service
+spec:
+  selector:
+    app: ecommerce
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer
